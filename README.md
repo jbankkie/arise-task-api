@@ -31,8 +31,9 @@ arise-task-api/
 ├── cmd/                  # Application entry point
 │   └── main.go          # Main server file
 │
-├── configs/              # Configuration files
-│   └── .env             # Environment variables
+├── configs/              # Configuration package
+│   └── config.go        # Centralized configuration loader
+├── .env                 # Environment variables (root)
 │
 ├── internal/             # Private application code
 │   ├── handler/          # HTTP request handlers (controllers)
@@ -52,10 +53,10 @@ arise-task-api/
 │
 ├── test/                 # Test files
 ├── docker-compose.yml    # Docker Compose configuration
-├── Dockerfile           # Docker image configuration
-├── init.sql             # Database initialization
-├── go.mod / go.sum      # Go module files
-└── README.md            # This file
+├── Dockerfile            # Docker image configuration
+├── init.sql              # Database initialization
+├── go.mod / go.sum       # Go module files
+└── README.md             # This file
 ```
 
 ## 🚀 Quick Start
