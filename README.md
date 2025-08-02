@@ -36,7 +36,6 @@ your-app/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── init.sql              # PostgreSQL initialization
-├── mongo-init.js         # MongoDB initialization
 ├── go.mod / go.sum
 └── README.md
 ```
@@ -46,7 +45,7 @@ your-app/
 - **User Management**: Create, update, delete, and list users
 - **Task Management**: CRUD operations for tasks with status and priority
 - **Category Management**: Organize tasks by categories
-- **Database Support**: PostgreSQL (primary) and MongoDB (optional)
+- **Database Support**: PostgreSQL with GORM ORM
 - **RESTful API**: Clean API design with proper HTTP methods
 - **Docker Support**: Easy deployment with Docker Compose
 - **Database Migration**: Auto migration with GORM
@@ -56,8 +55,7 @@ your-app/
 - **Go 1.18+**
 - **Gin Web Framework**: Fast HTTP web framework
 - **GORM**: Object-relational mapping library
-- **PostgreSQL**: Primary relational database
-- **MongoDB**: Optional NoSQL database
+- **PostgreSQL**: Relational database with GORM
 - **Docker & Docker Compose**: Containerization
 - **UUID**: For unique identifiers
 
@@ -84,8 +82,8 @@ go mod tidy
 ### 3. Start with Docker Compose
 
 ```bash
-# Start all services (PostgreSQL, MongoDB, Redis, App)
-docker-compose up -d
+# Start PostgreSQL and App services
+docker-compose up postgres app -d
 
 # View logs
 docker-compose logs -f app
@@ -98,7 +96,6 @@ docker-compose logs -f app
 - **pgAdmin** (PostgreSQL UI): http://localhost:5050
   - Email: admin@taskmanager.com
   - Password: admin
-- **Mongo Express** (MongoDB UI): http://localhost:8081
 
 ### 5. Manual setup (without Docker)
 
@@ -178,15 +175,10 @@ curl http://localhost:8080/api/v1/tasks?limit=5&offset=0
 
 ## Database Configuration
 
-### PostgreSQL (Primary)
+### PostgreSQL
 - Default connection: `localhost:5432`
 - Database: `taskmanager`
 - User/Password: `postgres/password`
-
-### MongoDB (Optional)
-- Default connection: `mongodb://localhost:27017`
-- Database: `taskmanager`
-- Auth: `admin/password`
 
 ## Environment Variables
 
@@ -202,10 +194,6 @@ DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=password
 DB_NAME=taskmanager
-
-# MongoDB Configuration
-MONGO_URI=mongodb://localhost:27017
-MONGO_DB_NAME=taskmanager
 
 # JWT Secret
 JWT_SECRET=your-secret-key
@@ -238,8 +226,8 @@ air
 # Build and start all services
 docker-compose up --build
 
-# Start only specific services
-docker-compose up postgres mongodb
+# Start only PostgreSQL service
+docker-compose up postgres
 
 # View logs
 docker-compose logs -f app

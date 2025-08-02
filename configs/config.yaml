@@ -10,11 +10,7 @@ database:
     password: password
     dbname: taskmanager
     sslmode: disable
-  
-  mongodb:
-    uri: mongodb://localhost:27017
-    database: taskmanager
 
 jwt:
-  secret: your-secret-key
+  secret: your-secret-key-please-change-in-production
   expires_in: 24h
