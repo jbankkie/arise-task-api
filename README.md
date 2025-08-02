@@ -1,140 +1,211 @@
 # Task Manager API
 
-A RESTful API for task management built with Go, Gin, GORM, and supports both PostgreSQL and MongoDB.
+A modern RESTful API for task management built with Go, Gin web framework, GORM ORM, and PostgreSQL database. Supports both Docker containerized deployment and local development with WSL.
 
-## Project Structure
+## 🚀 Features
+
+- **User Management**: Complete CRUD operations for users with authentication
+- **Task Management**: Create, update, delete, and list tasks with status tracking
+- **Category System**: Organize tasks by categories
+- **Database**: PostgreSQL with GORM ORM and auto-migration
+- **RESTful API**: Clean API design following REST conventions
+- **Docker Support**: Full containerization with Docker Compose
+- **WSL Support**: Local development using Windows Subsystem for Linux
+- **Health Monitoring**: Built-in health check endpoints
+
+## 🛠 Technologies Used
+
+- **Go 1.23+**: Modern Go with latest features
+- **Gin Framework**: High-performance HTTP web framework
+- **GORM**: Feature-rich ORM library for Go
+- **PostgreSQL 15**: Reliable relational database
+- **Docker & Docker Compose**: Container orchestration
+- **UUID**: Unique identifiers for all entities
+- **WSL2**: Windows Subsystem for Linux for development
+
+## 📁 Project Structure
 
 ```
-your-app/
+arise-task-api/
 │
-├── cmd/                  # main.go และ entry point
-│   └── main.go
+├── cmd/                  # Application entry point
+│   └── main.go          # Main server file
 │
-├── configs/              # env, config.yaml
-│   ├── .env
-│   └── config.yaml
+├── configs/              # Configuration files
+│   └── .env             # Environment variables
 │
-├── internal/
-│   ├── handler/          # Gin handler (controller)
+├── internal/             # Private application code
+│   ├── handler/          # HTTP request handlers (controllers)
 │   │   ├── user_handler.go
 │   │   └── task_handler.go
-│   ├── model/            # Struct ของ DB
+│   ├── model/            # Database models
 │   │   └── models.go
-│   ├── repository/       # DB access layer (GORM/Mongo)
+│   ├── repository/       # Data access layer
 │   │   ├── user_repository.go
 │   │   ├── task_repository.go
 │   │   └── category_repository.go
-│   ├── service/          # Logic ของระบบ
+│   ├── service/          # Business logic layer
 │   │   ├── user_service.go
 │   │   └── task_service.go
-│   └── routes/           # Routing setup
+│   └── routes/           # API routing
 │       └── routes.go
 │
-├── test/                 # Unit tests
-│   └── repository_test.go
-│
-├── Dockerfile
-├── docker-compose.yml
-├── init.sql              # PostgreSQL initialization
-├── go.mod / go.sum
-└── README.md
+├── test/                 # Test files
+├── docker-compose.yml    # Docker Compose configuration
+├── Dockerfile           # Docker image configuration
+├── init.sql             # Database initialization
+├── go.mod / go.sum      # Go module files
+└── README.md            # This file
 ```
 
-## Features
-
-- **User Management**: Create, update, delete, and list users
-- **Task Management**: CRUD operations for tasks with status and priority
-- **Category Management**: Organize tasks by categories
-- **Database Support**: PostgreSQL with GORM ORM
-- **RESTful API**: Clean API design with proper HTTP methods
-- **Docker Support**: Easy deployment with Docker Compose
-- **Database Migration**: Auto migration with GORM
-
-## Technologies Used
-
-- **Go 1.18+**
-- **Gin Web Framework**: Fast HTTP web framework
-- **GORM**: Object-relational mapping library
-- **PostgreSQL**: Relational database with GORM
-- **Docker & Docker Compose**: Containerization
-- **UUID**: For unique identifiers
-
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Go 1.18 or higher
-- Docker and Docker Compose
+- **Go 1.23+**
+- **Docker Desktop** with WSL2 integration
+- **Windows Subsystem for Linux (WSL2)** with Ubuntu
 
-### 1. Clone the repository
+### Option 1: Docker Compose (Recommended for Production)
 
-```bash
-git clone <repository-url>
-cd Arise-test
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/jbankkie/arise-task-api.git
+   cd arise-task-api
+   ```
+
+2. **Start all services**
+   ```bash
+   # Start PostgreSQL, API, and pgAdmin
+   docker compose up -d
+   
+   # View logs
+   docker compose logs -f app
+   ```
+
+3. **Access the services**
+   - **API**: http://localhost:8080
+   - **Health Check**: http://localhost:8080/health
+   - **pgAdmin**: http://localhost:5050
+     - Email: `admin@taskmanager.com`
+     - Password: `admin`
+
+### Option 2: Local Development (WSL + Go)
+
+Perfect for active development with hot reload and debugging.
+
+1. **Setup WSL and Docker Integration**
+   ```bash
+   # Install Ubuntu WSL
+   wsl --install Ubuntu
+   
+   # Enable Docker Desktop WSL integration:
+   # Docker Desktop → Settings → Resources → WSL Integration
+   # Enable "Ubuntu" distribution
+   ```
+
+2. **Start PostgreSQL in WSL**
+   ```bash
+   # Run PostgreSQL container in Ubuntu WSL
+   wsl -d Ubuntu docker run --name postgres-wsl \
+     -e POSTGRES_USER=postgres \
+     -e POSTGRES_PASSWORD=password \
+     -e POSTGRES_DB=taskmanager \
+     -e POSTGRES_HOST_AUTH_METHOD=trust \
+     -p 5432:5432 -d postgres:15-alpine
+   ```
+
+3. **Get WSL IP address and update configuration**
+   ```bash
+   # Get WSL IP
+   wsl -d Ubuntu hostname -I
+   # Example output: 172.19.18.36
+   
+   # Update .env file with WSL IP
+   # DB_HOST=172.19.18.36
+   ```
+
+4. **Run Go application locally**
+   ```bash
+   # Install dependencies
+   go mod tidy
+   
+   # Run the application
+   go run cmd/main.go
+   ```
+
+5. **Development commands**
+   ```bash
+   # Stop PostgreSQL
+   wsl -d Ubuntu docker stop postgres-wsl
+   wsl -d Ubuntu docker rm postgres-wsl
+   
+   # Restart PostgreSQL
+   wsl -d Ubuntu docker start postgres-wsl
+   ```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+Create or update `.env` file in the root directory:
+
+```env
+# Server Configuration
+PORT=8080
+GIN_MODE=debug
+
+# Database Configuration
+# For Docker Compose: use 'postgres'
+# For WSL Development: use WSL IP address (e.g., 172.19.18.36)
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=password
+DB_NAME=taskmanager
+
+# Security
+JWT_SECRET=your-development-secret-key
 ```
 
-### 2. Install dependencies
+### WSL IP Address Configuration
+
+The WSL IP address changes on each Windows restart. Update your `.env` file:
 
 ```bash
-go mod tidy
+# Get current WSL IP
+wsl -d Ubuntu hostname -I
+
+# Update .env file
+DB_HOST=<WSL_IP_ADDRESS>
 ```
 
-### 3. Start with Docker Compose
-
-```bash
-# Start PostgreSQL and App services
-docker-compose up postgres app -d
-
-# View logs
-docker-compose logs -f app
-```
-
-### 4. Access the services
-
-- **API**: http://localhost:8080
-- **Health Check**: http://localhost:8080/health
-- **pgAdmin** (PostgreSQL UI): http://localhost:5050
-  - Email: admin@taskmanager.com
-  - Password: admin
-
-### 5. Manual setup (without Docker)
-
-```bash
-# 1. Setup PostgreSQL
-createdb taskmanager
-
-# 2. Update configs/.env with your database credentials
-
-# 3. Run the application
-go run cmd/main.go
-```
-
-## API Endpoints
+## 📚 API Documentation
 
 ### Health Check
-```
+```http
 GET /health
 ```
 
-### Users
-```
-POST   /api/v1/users          # Create user
+### User Endpoints
+```http
+POST   /api/v1/users          # Create new user
 GET    /api/v1/users/:id      # Get user by ID
 PUT    /api/v1/users/:id      # Update user
 DELETE /api/v1/users/:id      # Delete user
-GET    /api/v1/users          # List users (with pagination)
+GET    /api/v1/users          # List all users (with pagination)
 ```
 
-### Tasks
-```
-POST   /api/v1/tasks          # Create task
+### Task Endpoints
+```http
+POST   /api/v1/tasks          # Create new task
 GET    /api/v1/tasks/:id      # Get task by ID
 PUT    /api/v1/tasks/:id      # Update task
 DELETE /api/v1/tasks/:id      # Delete task
-GET    /api/v1/tasks          # Get user's tasks (with pagination & filtering)
+GET    /api/v1/tasks          # Get user's tasks (with filtering & pagination)
 ```
 
-## API Examples
+## 💡 API Usage Examples
 
 ### Create User
 ```bash
@@ -157,168 +228,225 @@ curl -X POST http://localhost:8080/api/v1/tasks \
     "title": "Complete Project",
     "description": "Finish the task management API",
     "priority": "high",
-    "due_date": "2024-12-31T23:59:59Z"
+    "status": "pending",
+    "due_date": "2025-12-31T23:59:59Z"
   }'
 ```
 
-### Get Tasks with filtering
+### Get Tasks with Filtering
 ```bash
 # Get all tasks
 curl http://localhost:8080/api/v1/tasks
 
 # Get tasks by status
-curl http://localhost:8080/api/v1/tasks?status=pending
+curl "http://localhost:8080/api/v1/tasks?status=pending"
 
 # Get tasks with pagination
-curl http://localhost:8080/api/v1/tasks?limit=5&offset=0
+curl "http://localhost:8080/api/v1/tasks?limit=5&offset=0"
+
+# Get high priority tasks
+curl "http://localhost:8080/api/v1/tasks?priority=high"
 ```
 
-## Database Configuration
+### PowerShell Examples (Windows)
+```powershell
+# Health Check
+Invoke-RestMethod -Uri "http://localhost:8080/health" -Method Get
 
-### PostgreSQL
-- Default connection: `localhost:5432`
-- Database: `taskmanager`
-- User/Password: `postgres/password`
+# Create User
+Invoke-RestMethod -Uri "http://localhost:8080/api/v1/users" -Method Post -ContentType "application/json" -Body '{"username":"testuser","email":"test@example.com","password":"password123"}'
 
-## Environment Variables
-
-Create `configs/.env` file:
-
-```env
-PORT=8080
-GIN_MODE=debug
-
-# Database Configuration
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=password
-DB_NAME=taskmanager
-
-# JWT Secret
-JWT_SECRET=your-secret-key
+# Get Users
+Invoke-RestMethod -Uri "http://localhost:8080/api/v1/users" -Method Get
 ```
 
-## Development
+## 🐳 Docker Commands
 
-### Run tests
+### Development with Docker Compose
+```bash
+# Start all services
+docker compose up -d
+
+# Start only PostgreSQL
+docker compose up postgres -d
+
+# Start only the API
+docker compose up app -d
+
+# View logs
+docker compose logs -f app
+docker compose logs -f postgres
+
+# Stop services
+docker compose down
+
+# Remove volumes (⚠️ deletes all data)
+docker compose down -v
+
+# Rebuild and restart
+docker compose up --build -d
+```
+
+### WSL Development Commands
+```bash
+# Start PostgreSQL in WSL
+wsl -d Ubuntu docker run --name postgres-wsl \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DB=taskmanager \
+  -e POSTGRES_HOST_AUTH_METHOD=trust \
+  -p 5432:5432 -d postgres:15-alpine
+
+# Check WSL IP
+wsl -d Ubuntu hostname -I
+
+# Stop PostgreSQL
+wsl -d Ubuntu docker stop postgres-wsl
+wsl -d Ubuntu docker rm postgres-wsl
+
+# Check PostgreSQL status
+wsl -d Ubuntu docker ps | grep postgres
+```
+
+## 🗄️ Database Schema
+
+### Users Table
+```sql
+- id           UUID PRIMARY KEY
+- username     VARCHAR UNIQUE NOT NULL
+- email        VARCHAR UNIQUE NOT NULL  
+- password     VARCHAR NOT NULL (hashed)
+- first_name   VARCHAR
+- last_name    VARCHAR
+- created_at   TIMESTAMP
+- updated_at   TIMESTAMP
+- deleted_at   TIMESTAMP (soft delete)
+```
+
+### Tasks Table
+```sql
+- id           UUID PRIMARY KEY
+- title        VARCHAR NOT NULL
+- description  TEXT
+- status       ENUM (pending, in_progress, completed, cancelled)
+- priority     ENUM (low, medium, high, urgent)
+- due_date     TIMESTAMP
+- user_id      UUID FOREIGN KEY
+- category_id  UUID FOREIGN KEY
+- created_at   TIMESTAMP
+- updated_at   TIMESTAMP
+- deleted_at   TIMESTAMP (soft delete)
+```
+
+### Categories Table
+```sql
+- id           UUID PRIMARY KEY
+- name         VARCHAR NOT NULL
+- description  TEXT
+- color        VARCHAR
+- user_id      UUID FOREIGN KEY
+- created_at   TIMESTAMP
+- updated_at   TIMESTAMP
+- deleted_at   TIMESTAMP (soft delete)
+```
+
+## 🛠️ Development
+
+### Running Tests
 ```bash
 go test ./test/...
+go test -v ./test/...
 ```
 
-### Build application
+### Building the Application
 ```bash
+# Build for current platform
 go build -o bin/app cmd/main.go
+
+# Build for Linux (Docker)
+GOOS=linux GOARCH=amd64 go build -o bin/app-linux cmd/main.go
+
+# Build for Windows
+GOOS=windows GOARCH=amd64 go build -o bin/app.exe cmd/main.go
+
+# Note: bin/ directory is ignored in .gitignore
 ```
 
-### Run with hot reload (install air first)
+### Hot Reload Development
 ```bash
-# Install air
+# Install air for hot reload
 go install github.com/cosmtrek/air@latest
 
-# Run with hot reload
+# Run with hot reload (create .air.toml config first)
 air
 ```
 
-## Docker Commands
-
+### Creating Air Configuration
 ```bash
-# Build and start all services
-docker-compose up --build
+# Generate default air config
+air init
 
-# Start only PostgreSQL service
-docker-compose up postgres
-
-# View logs
-docker-compose logs -f app
-
-# Stop all services
-docker-compose down
-
-# Remove volumes (caution: deletes data)
-docker-compose down -v
+# Or create custom .air.toml
 ```
 
-## Database Schema
+## 🔧 Troubleshooting
 
-### Users Table
-- `id` (UUID, Primary Key)
-- `username` (String, Unique)
-- `email` (String, Unique)
-- `password` (String, Hashed)
-- `first_name` (String)
-- `last_name` (String)
-- `created_at`, `updated_at`, `deleted_at`
+### Common Issues
 
-### Tasks Table
-- `id` (UUID, Primary Key)
-- `title` (String, Required)
-- `description` (Text)
-- `status` (Enum: pending, in_progress, completed, cancelled)
-- `priority` (Enum: low, medium, high, urgent)
-- `due_date` (Timestamp, Optional)
-- `user_id` (UUID, Foreign Key)
-- `category_id` (UUID, Foreign Key, Optional)
-- `created_at`, `updated_at`, `deleted_at`
+1. **Database Connection Failed**
+   ```bash
+   # Check if PostgreSQL is running
+   docker ps | grep postgres
+   
+   # Check WSL IP
+   wsl -d Ubuntu hostname -I
+   
+   # Update .env with correct DB_HOST
+   ```
 
-### Categories Table
-- `id` (UUID, Primary Key)
-- `name` (String, Required)
-- `description` (Text)
-- `color` (String)
-- `user_id` (UUID, Foreign Key)
-- `created_at`, `updated_at`, `deleted_at`
+2. **Port Already in Use**
+   ```bash
+   # Find process using port 8080
+   netstat -ano | findstr :8080
+   
+   # Kill process (replace PID)
+   taskkill /PID <PID> /F
+   ```
 
-## Contributing
+3. **WSL Docker Issues**
+   ```bash
+   # Restart Docker Desktop
+   # Enable WSL integration in Docker Desktop settings
+   # Settings → Resources → WSL Integration → Enable Ubuntu
+   ```
+
+### Logs and Debugging
+```bash
+# Application logs
+docker compose logs -f app
+
+# Database logs  
+docker compose logs -f postgres
+
+# WSL PostgreSQL logs
+wsl -d Ubuntu docker logs postgres-wsl
+```
+
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-├── internal
-│   └── app
-│       └── app.go      # Main application logic
-├── pkg
-│   └── utils.go        # Utility functions
-├── go.mod              # Module dependencies
-├── go.sum              # Module checksums
-└── README.md           # Project documentation
-```
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Getting Started
+## 🙏 Acknowledgments
 
-### Prerequisites
-- Go 1.16 or later
-- A working Go environment
-
-### Installation
-1. Clone the repository:
-   ```
-   git clone <repository-url>
-   cd Arise-test
-   ```
-
-2. Install dependencies:
-   ```
-   go mod tidy
-   ```
-
-### Running the Application
-To run the application, execute the following command:
-```
-go run cmd/main.go
-```
-
-### Usage
-Once the application is running, you can access it at `http://localhost:8080` (or the port specified in your application).
-
-## Contributing
-Contributions are welcome! Please open an issue or submit a pull request for any enhancements or bug fixes.
-
-## License
-This project is licensed under the MIT License. See the LICENSE file for details.
+- [Gin Web Framework](https://gin-gonic.com/)
+- [GORM](https://gorm.io/)
+- [PostgreSQL](https://www.postgresql.org/)
+- [Docker](https://www.docker.com/)

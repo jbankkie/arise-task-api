@@ -1,29 +1,28 @@
 package main
 
 import (
+	"Arise-test/configs"
 	"Arise-test/internal/handler"
 	"Arise-test/internal/model"
 	"Arise-test/internal/repository"
 	"Arise-test/internal/routes"
 	"Arise-test/internal/service"
 	"log"
-	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func main() {
-	// Load environment variables
-	err := godotenv.Load("configs/.env")
-	if err != nil {
-		log.Println("Warning: .env file not found")
-	}
+	// Load configuration
+	config := configs.LoadConfig()
+
+	// Set Gin mode
+	gin.SetMode(config.Server.GinMode)
 
 	// Initialize database
-	db, err := initDB()
+	db, err := initDB(config)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -54,44 +53,17 @@ func main() {
 	routes.SetupRoutes(router, userHandler, taskHandler)
 
 	// Start server
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	log.Printf("Starting server on port %s", port)
-	if err := router.Run(":" + port); err != nil {
+	log.Printf("Starting server on port %s", config.Server.Port)
+	if err := router.Run(":" + config.Server.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
 
-func initDB() (*gorm.DB, error) {
-	host := os.Getenv("DB_HOST")
-	if host == "" {
-		host = "localhost"
-	}
+func initDB(config *configs.Config) (*gorm.DB, error) {
+	dsn := config.GetDatabaseDSN()
 
-	port := os.Getenv("DB_PORT")
-	if port == "" {
-		port = "5432"
-	}
-
-	user := os.Getenv("DB_USER")
-	if user == "" {
-		user = "postgres"
-	}
-
-	password := os.Getenv("DB_PASSWORD")
-	if password == "" {
-		password = "password"
-	}
-
-	dbname := os.Getenv("DB_NAME")
-	if dbname == "" {
-		dbname = "taskmanager"
-	}
-
-	dsn := "host=" + host + " user=" + user + " password=" + password + " dbname=" + dbname + " port=" + port + " sslmode=disable TimeZone=Asia/Bangkok"
+	log.Printf("Connecting to database with DSN: postgres://%s:***@%s:%s/%s",
+		config.Database.User, config.Database.Host, config.Database.Port, config.Database.Name)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
