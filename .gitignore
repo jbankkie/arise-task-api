@@ -20,6 +20,7 @@ bin/
 go.work
 
 # Environment variables
+.env
 .env.local
 .env.production
 .env.staging

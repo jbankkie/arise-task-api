@@ -33,19 +33,20 @@ A modern RESTful API for task management built with Go, Gin web framework, GORM 
 arise-task-api/
 │
 ├── cmd/                  # Application entry point
-│   └── main.go          # Main server file
+│   └── main.go           # Main server file
 │
 ├── configs/              # Configuration package
-│   └── config.go        # Centralized configuration loader
-├── .env                 # Environment variables (root)
+│   └── config.go         # Centralized configuration loader
+│
+├── .env                  # Environment variables (root)
 │
 ├── internal/             # Private application code
 │   ├── handler/          # HTTP request handlers (controllers)
-│   │   ├── user_handler.go      # User CRUD endpoints
-│   │   ├── task_handler.go      # Task CRUD endpoints
-│   │   └── category_handler.go  # Category CRUD endpoints
-│   ├── model/            # Database models
-│   │   └── models.go    # User, Task, Category models with relationships
+│   │   ├── user_handler.go
+│   │   ├── task_handler.go
+│   │   └── category_handler.go
+│   ├── model/            # Database models (User, Task, Category)
+│   │   └── models.go
 │   ├── repository/       # Data access layer
 │   │   ├── user_repository.go
 │   │   ├── task_repository.go
@@ -55,33 +56,15 @@ arise-task-api/
 │   │   ├── task_service.go
 │   │   └── category_service.go
 │   └── routes/           # API routing
-│       └── routes.go    # All API endpoints registration
-│
-├── test/                 # Comprehensive test files
-│   ├── model_test.go     # Model validation and creation tests
-│   ├── repository_test.go # Database operation tests (19 tests)
-│   ├── service_test.go   # Business logic tests (14 tests)
-│   ├── handler_test.go   # HTTP handler tests (6 tests)
-│   └── README.md         # Test documentation
-├── docker-compose.yml    # Docker Compose configuration
-├── Dockerfile            # Docker image configuration
-├── init.sql              # Database initialization
-├── go.mod / go.sum       # Go module files
-└── README.md             # This file
-```
-│   │   └── category_repository.go
-│   ├── service/          # Business logic layer
-│   │   ├── user_service.go
-│   │   └── task_service.go
-│   └── routes/           # API routing
 │       └── routes.go
 │
 ├── test/                 # Test files
-│   ├── model_test.go     # Model validation and creation tests
-│   ├── repository_test.go # Database operation tests (requires PostgreSQL)
-│   ├── service_test.go   # Business logic tests (requires PostgreSQL)
-│   ├── handler_test.go   # HTTP handler tests (requires PostgreSQL)
-│   └── README.md         # Test documentation
+│   ├── model_test.go
+│   ├── repository_test.go
+│   ├── service_test.go
+│   ├── handler_test.go
+│   └── README.md
+│
 ├── docker-compose.yml    # Docker Compose configuration
 ├── Dockerfile            # Docker image configuration
 ├── init.sql              # Database initialization
