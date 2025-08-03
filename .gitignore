@@ -53,5 +53,14 @@ Thumbs.db
 pg_hba.conf
 run-local.bat
 
+# Test runner scripts (local development tools)
+run-tests.ps1
+run-tests.sh
+test-runner.ps1
+
+# Test coverage files
+coverage.out
+coverage.html
+
 # Docker volumes
 docker-data/

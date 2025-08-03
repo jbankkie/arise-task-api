@@ -7,11 +7,13 @@ A modern RESTful API for task management built with Go, Gin web framework, GORM 
 - **User Management**: Complete CRUD operations for users with authentication
 - **Task Management**: Create, update, delete, and list tasks with status tracking
 - **Category System**: Organize tasks by categories
+- **Comprehensive Testing**: Model, Repository, Service, and Handler layer tests
 - **Database**: PostgreSQL with GORM ORM and auto-migration
 - **RESTful API**: Clean API design following REST conventions
 - **Docker Support**: Full containerization with Docker Compose
 - **WSL Support**: Local development using Windows Subsystem for Linux
 - **Health Monitoring**: Built-in health check endpoints
+- **Centralized Configuration**: Environment-based configuration management
 
 ## 🛠 Technologies Used
 
@@ -22,6 +24,8 @@ A modern RESTful API for task management built with Go, Gin web framework, GORM 
 - **Docker & Docker Compose**: Container orchestration
 - **UUID**: Unique identifiers for all entities
 - **WSL2**: Windows Subsystem for Linux for development
+- **bcrypt**: Secure password hashing
+- **Testify**: Comprehensive testing framework
 
 ## 📁 Project Structure
 
@@ -52,6 +56,11 @@ arise-task-api/
 │       └── routes.go
 │
 ├── test/                 # Test files
+│   ├── model_test.go     # Model validation and creation tests
+│   ├── repository_test.go # Database operation tests (requires PostgreSQL)
+│   ├── service_test.go   # Business logic tests (requires PostgreSQL)
+│   ├── handler_test.go   # HTTP handler tests (requires PostgreSQL)
+│   └── README.md         # Test documentation
 ├── docker-compose.yml    # Docker Compose configuration
 ├── Dockerfile            # Docker image configuration
 ├── init.sql              # Database initialization
@@ -355,8 +364,30 @@ wsl -d Ubuntu docker ps | grep postgres
 
 ### Running Tests
 ```bash
-go test ./test/...
-go test -v ./test/...
+# Run all model tests (no database required)
+go test ./test/ -run "TestUserModel|TestTaskModel" -v
+
+# Run all tests (requires PostgreSQL)
+go test ./test/ -v
+
+# Run with coverage
+go test ./test/ -v -cover
+
+# Generate coverage report
+go test ./test/ -coverprofile=coverage.out
+go tool cover -html=coverage.out -o coverage.html
+```
+
+### Test Database Setup
+```bash
+# Start PostgreSQL test database
+docker run --name postgres-test \
+  -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DB=taskmanager_test \
+  -p 5432:5432 -d postgres:15-alpine
+
+# Stop test database
+docker stop postgres-test && docker rm postgres-test
 ```
 
 ### Building the Application

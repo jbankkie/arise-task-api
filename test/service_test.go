@@ -3,208 +3,160 @@ package test
 import (
 	"Arise-test/internal/model"
 	"Arise-test/internal/repository"
-	"fmt"
-	"log"
-	"os"
+	"Arise-test/internal/service"
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	"golang.org/x/crypto/bcrypt"
 )
 
-func setupTestDB() *gorm.DB {
-	// Use PostgreSQL test database (require Docker running)
-	dsn := "postgres://postgres:password@localhost:5432/taskmanager_test?sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
-	if err != nil {
-		// If PostgreSQL is not available, skip tests
-		log.Println("PostgreSQL test database not available, skipping tests...")
-		log.Println("Run 'docker run --name postgres-test -e POSTGRES_PASSWORD=password -e POSTGRES_DB=taskmanager_test -p 5432:5432 -d postgres:15-alpine' to set up test DB")
-		return nil
-	}
-
-	// Clean up any existing data
-	db.Exec("DROP TABLE IF EXISTS tasks CASCADE")
-	db.Exec("DROP TABLE IF EXISTS users CASCADE")
-	db.Exec("DROP TABLE IF EXISTS categories CASCADE")
-
-	// Migrate the schema
-	err = db.AutoMigrate(&model.User{}, &model.Task{}, &model.Category{})
-	if err != nil {
-		log.Fatal("Failed to migrate test database:", err)
-	}
-
-	return db
-}
-
-func TestMain(m *testing.M) {
-	// Setup
-	log.Println("Setting up test environment...")
-
-	// Run tests
-	code := m.Run()
-
-	// Teardown
-	log.Println("Cleaning up test environment...")
-
-	os.Exit(code)
-}
-
-func TestUserRepository_Create(t *testing.T) {
+func TestUserService_CreateUser(t *testing.T) {
 	db := setupTestDB()
-	if db == nil {
-		t.Skip("Test database not available")
-	}
 	userRepo := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepo)
 
 	user := &model.User{
 		Username:  "testuser",
 		Email:     "test@example.com",
-		Password:  "hashedpassword",
+		Password:  "password123",
 		FirstName: "Test",
 		LastName:  "User",
 	}
 
-	err := userRepo.Create(user)
+	err := userService.CreateUser(user)
 
 	require.NoError(t, err)
-	assert.NotNil(t, user)
-	assert.NotEqual(t, uuid.Nil, user.ID)
 	assert.Equal(t, "testuser", user.Username)
 	assert.Equal(t, "test@example.com", user.Email)
-	assert.False(t, user.CreatedAt.IsZero())
+
+	// Verify password is hashed
+	assert.NotEqual(t, "password123", user.Password)
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte("password123"))
+	assert.NoError(t, err)
 }
 
-func TestUserRepository_GetByEmail(t *testing.T) {
+func TestUserService_CreateUser_DuplicateEmail(t *testing.T) {
 	db := setupTestDB()
-	if db == nil {
-		t.Skip("Test database not available")
-	}
 	userRepo := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepo)
+
+	// Create first user
+	user1 := &model.User{
+		Username:  "user1",
+		Email:     "test@example.com",
+		Password:  "password123",
+		FirstName: "Test",
+		LastName:  "User",
+	}
+	err := userService.CreateUser(user1)
+	require.NoError(t, err)
+
+	// Try to create second user with same email
+	user2 := &model.User{
+		Username:  "user2",
+		Email:     "test@example.com", // Same email
+		Password:  "password456",
+		FirstName: "Another",
+		LastName:  "User",
+	}
+	err = userService.CreateUser(user2)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "user with this email already exists")
+}
+
+func TestUserService_GetUserByEmail(t *testing.T) {
+	db := setupTestDB()
+	userRepo := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepo)
 
 	// Create test user
 	user := &model.User{
 		Username:  "testuser",
 		Email:     "test@example.com",
-		Password:  "hashedpassword",
+		Password:  "password123",
 		FirstName: "Test",
 		LastName:  "User",
 	}
-	err := userRepo.Create(user)
+	err := userService.CreateUser(user)
 	require.NoError(t, err)
 
-	// Test GetByEmail
-	foundUser, err := userRepo.GetByEmail("test@example.com")
+	// Get user by email
+	foundUser, err := userService.GetUserByEmail("test@example.com")
 
 	require.NoError(t, err)
 	assert.Equal(t, user.ID, foundUser.ID)
 	assert.Equal(t, "test@example.com", foundUser.Email)
 }
 
-func TestUserRepository_GetByEmail_NotFound(t *testing.T) {
+func TestUserService_GetUserByID(t *testing.T) {
 	db := setupTestDB()
 	userRepo := repository.NewUserRepository(db)
-
-	foundUser, err := userRepo.GetByEmail("nonexistent@example.com")
-
-	assert.Error(t, err)
-	assert.Nil(t, foundUser)
-}
-
-func TestUserRepository_GetByID(t *testing.T) {
-	db := setupTestDB()
-	userRepo := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepo)
 
 	// Create test user
 	user := &model.User{
 		Username:  "testuser",
 		Email:     "test@example.com",
-		Password:  "hashedpassword",
+		Password:  "password123",
 		FirstName: "Test",
 		LastName:  "User",
 	}
-	err := userRepo.Create(user)
+	err := userService.CreateUser(user)
 	require.NoError(t, err)
 
-	// Test GetByID
-	foundUser, err := userRepo.GetByID(user.ID)
+	// Get user by ID
+	foundUser, err := userService.GetUserByID(user.ID)
 
 	require.NoError(t, err)
 	assert.Equal(t, user.ID, foundUser.ID)
 	assert.Equal(t, "testuser", foundUser.Username)
 }
 
-func TestUserRepository_Update(t *testing.T) {
+func TestUserService_UpdateUser(t *testing.T) {
 	db := setupTestDB()
 	userRepo := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepo)
 
 	// Create test user
 	user := &model.User{
 		Username:  "testuser",
 		Email:     "test@example.com",
-		Password:  "hashedpassword",
+		Password:  "password123",
 		FirstName: "Test",
 		LastName:  "User",
 	}
-	err := userRepo.Create(user)
+	err := userService.CreateUser(user)
 	require.NoError(t, err)
 
 	// Update user
 	user.FirstName = "Updated"
 	user.LastName = "Name"
-	err = userRepo.Update(user)
+	err = userService.UpdateUser(user)
 
 	require.NoError(t, err)
 	assert.Equal(t, "Updated", user.FirstName)
 	assert.Equal(t, "Name", user.LastName)
 }
 
-func TestUserRepository_Delete(t *testing.T) {
+func TestTaskService_CreateTask(t *testing.T) {
 	db := setupTestDB()
 	userRepo := repository.NewUserRepository(db)
+	taskRepo := repository.NewTaskRepository(db)
+	userService := service.NewUserService(userRepo)
+	taskService := service.NewTaskService(taskRepo)
 
 	// Create test user
 	user := &model.User{
 		Username:  "testuser",
 		Email:     "test@example.com",
-		Password:  "hashedpassword",
+		Password:  "password123",
 		FirstName: "Test",
 		LastName:  "User",
 	}
-	err := userRepo.Create(user)
-	require.NoError(t, err)
-
-	// Delete user
-	err = userRepo.Delete(user.ID)
-	require.NoError(t, err)
-
-	// Verify user is deleted (soft delete)
-	foundUser, err := userRepo.GetByID(user.ID)
-	assert.Error(t, err) // Should return error for soft deleted record
-	assert.Nil(t, foundUser)
-}
-
-func TestTaskRepository_Create(t *testing.T) {
-	db := setupTestDB()
-	userRepo := repository.NewUserRepository(db)
-	taskRepo := repository.NewTaskRepository(db)
-
-	// Create test user first
-	user := &model.User{
-		Username:  "testuser",
-		Email:     "test@example.com",
-		Password:  "hashedpassword",
-		FirstName: "Test",
-		LastName:  "User",
-	}
-	err := userRepo.Create(user)
+	err := userService.CreateUser(user)
 	require.NoError(t, err)
 
 	// Create test task
@@ -218,30 +170,30 @@ func TestTaskRepository_Create(t *testing.T) {
 		UserID:      user.ID,
 	}
 
-	err = taskRepo.Create(task)
+	err = taskService.CreateTask(task)
 
 	require.NoError(t, err)
-	assert.NotNil(t, task)
-	assert.NotEqual(t, uuid.Nil, task.ID)
 	assert.Equal(t, "Test Task", task.Title)
 	assert.Equal(t, model.TaskStatusPending, task.Status)
 	assert.Equal(t, user.ID, task.UserID)
 }
 
-func TestTaskRepository_GetByID(t *testing.T) {
+func TestTaskService_GetTaskByID(t *testing.T) {
 	db := setupTestDB()
 	userRepo := repository.NewUserRepository(db)
 	taskRepo := repository.NewTaskRepository(db)
+	userService := service.NewUserService(userRepo)
+	taskService := service.NewTaskService(taskRepo)
 
-	// Create test user first
+	// Create test user
 	user := &model.User{
 		Username:  "testuser",
 		Email:     "test@example.com",
-		Password:  "hashedpassword",
+		Password:  "password123",
 		FirstName: "Test",
 		LastName:  "User",
 	}
-	err := userRepo.Create(user)
+	err := userService.CreateUser(user)
 	require.NoError(t, err)
 
 	// Create test task
@@ -252,47 +204,49 @@ func TestTaskRepository_GetByID(t *testing.T) {
 		Priority:    model.TaskPriorityMedium,
 		UserID:      user.ID,
 	}
-	err = taskRepo.Create(task)
+	err = taskService.CreateTask(task)
 	require.NoError(t, err)
 
-	// Test GetByID
-	foundTask, err := taskRepo.GetByID(task.ID)
+	// Get task by ID
+	foundTask, err := taskService.GetTaskByID(task.ID)
 
 	require.NoError(t, err)
 	assert.Equal(t, task.ID, foundTask.ID)
 	assert.Equal(t, "Test Task", foundTask.Title)
 }
 
-func TestTaskRepository_GetByUserID(t *testing.T) {
+func TestTaskService_GetTasksByUserID(t *testing.T) {
 	db := setupTestDB()
 	userRepo := repository.NewUserRepository(db)
 	taskRepo := repository.NewTaskRepository(db)
+	userService := service.NewUserService(userRepo)
+	taskService := service.NewTaskService(taskRepo)
 
 	// Create test user
 	user := &model.User{
 		Username:  "testuser",
 		Email:     "test@example.com",
-		Password:  "hashedpassword",
+		Password:  "password123",
 		FirstName: "Test",
 		LastName:  "User",
 	}
-	err := userRepo.Create(user)
+	err := userService.CreateUser(user)
 	require.NoError(t, err)
 
 	// Create multiple tasks
 	for i := 0; i < 3; i++ {
 		task := &model.Task{
-			Title:    fmt.Sprintf("Task %d", i+1),
+			Title:    "Test Task",
 			Status:   model.TaskStatusPending,
 			Priority: model.TaskPriorityMedium,
 			UserID:   user.ID,
 		}
-		err := taskRepo.Create(task)
+		err := taskService.CreateTask(task)
 		require.NoError(t, err)
 	}
 
-	// Get tasks by user ID
-	tasks, err := taskRepo.GetByUserID(user.ID, 10, 0)
+	// Get user tasks
+	tasks, err := taskService.GetTasksByUserID(user.ID, 10, 0)
 
 	require.NoError(t, err)
 	assert.Len(t, tasks, 3)
@@ -301,20 +255,22 @@ func TestTaskRepository_GetByUserID(t *testing.T) {
 	}
 }
 
-func TestTaskRepository_Update(t *testing.T) {
+func TestTaskService_UpdateTask(t *testing.T) {
 	db := setupTestDB()
 	userRepo := repository.NewUserRepository(db)
 	taskRepo := repository.NewTaskRepository(db)
+	userService := service.NewUserService(userRepo)
+	taskService := service.NewTaskService(taskRepo)
 
-	// Create test user first
+	// Create test user
 	user := &model.User{
 		Username:  "testuser",
 		Email:     "test@example.com",
-		Password:  "hashedpassword",
+		Password:  "password123",
 		FirstName: "Test",
 		LastName:  "User",
 	}
-	err := userRepo.Create(user)
+	err := userService.CreateUser(user)
 	require.NoError(t, err)
 
 	// Create test task
@@ -325,33 +281,35 @@ func TestTaskRepository_Update(t *testing.T) {
 		Priority:    model.TaskPriorityMedium,
 		UserID:      user.ID,
 	}
-	err = taskRepo.Create(task)
+	err = taskService.CreateTask(task)
 	require.NoError(t, err)
 
 	// Update task
 	task.Title = "Updated Task"
 	task.Status = model.TaskStatusCompleted
-	err = taskRepo.Update(task)
+	err = taskService.UpdateTask(task)
 
 	require.NoError(t, err)
 	assert.Equal(t, "Updated Task", task.Title)
 	assert.Equal(t, model.TaskStatusCompleted, task.Status)
 }
 
-func TestTaskRepository_Delete(t *testing.T) {
+func TestTaskService_DeleteTask(t *testing.T) {
 	db := setupTestDB()
 	userRepo := repository.NewUserRepository(db)
 	taskRepo := repository.NewTaskRepository(db)
+	userService := service.NewUserService(userRepo)
+	taskService := service.NewTaskService(taskRepo)
 
-	// Create test user first
+	// Create test user
 	user := &model.User{
 		Username:  "testuser",
 		Email:     "test@example.com",
-		Password:  "hashedpassword",
+		Password:  "password123",
 		FirstName: "Test",
 		LastName:  "User",
 	}
-	err := userRepo.Create(user)
+	err := userService.CreateUser(user)
 	require.NoError(t, err)
 
 	// Create test task
@@ -362,15 +320,15 @@ func TestTaskRepository_Delete(t *testing.T) {
 		Priority:    model.TaskPriorityMedium,
 		UserID:      user.ID,
 	}
-	err = taskRepo.Create(task)
+	err = taskService.CreateTask(task)
 	require.NoError(t, err)
 
 	// Delete task
-	err = taskRepo.Delete(task.ID)
+	err = taskService.DeleteTask(task.ID)
 	require.NoError(t, err)
 
-	// Verify task is deleted (soft delete)
-	foundTask, err := taskRepo.GetByID(task.ID)
-	assert.Error(t, err) // Should return error for soft deleted record
+	// Verify task is deleted
+	foundTask, err := taskService.GetTaskByID(task.ID)
+	assert.Error(t, err)
 	assert.Nil(t, foundTask)
 }
