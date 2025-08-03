@@ -332,3 +332,310 @@ func TestTaskService_DeleteTask(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, foundTask)
 }
+
+func TestCategoryService_CreateCategory(t *testing.T) {
+	db := setupTestDB()
+	if db == nil {
+		t.Skip("Test database not available")
+	}
+	userRepo := repository.NewUserRepository(db)
+	categoryRepo := repository.NewCategoryRepository(db)
+	userService := service.NewUserService(userRepo)
+	categoryService := service.NewCategoryService(categoryRepo)
+
+	// Create test user
+	user := &model.User{
+		Username:  "testuser",
+		Email:     "test@example.com",
+		Password:  "password123",
+		FirstName: "Test",
+		LastName:  "User",
+	}
+	err := userService.CreateUser(user)
+	require.NoError(t, err)
+
+	// Create test category
+	category := &model.Category{
+		Name:        "Work Projects",
+		Description: "Work related project tasks",
+		Color:       "#2196F3",
+		UserID:      user.ID,
+	}
+
+	err = categoryService.CreateCategory(category)
+
+	require.NoError(t, err)
+	assert.Equal(t, "Work Projects", category.Name)
+	assert.Equal(t, "Work related project tasks", category.Description)
+	assert.Equal(t, "#2196F3", category.Color)
+	assert.Equal(t, user.ID, category.UserID)
+}
+
+func TestCategoryService_CreateCategory_EmptyName(t *testing.T) {
+	db := setupTestDB()
+	if db == nil {
+		t.Skip("Test database not available")
+	}
+	userRepo := repository.NewUserRepository(db)
+	categoryRepo := repository.NewCategoryRepository(db)
+	userService := service.NewUserService(userRepo)
+	categoryService := service.NewCategoryService(categoryRepo)
+
+	// Create test user
+	user := &model.User{
+		Username:  "testuser",
+		Email:     "test@example.com",
+		Password:  "password123",
+		FirstName: "Test",
+		LastName:  "User",
+	}
+	err := userService.CreateUser(user)
+	require.NoError(t, err)
+
+	// Try to create category with empty name
+	category := &model.Category{
+		Name:        "", // Empty name
+		Description: "Some description",
+		UserID:      user.ID,
+	}
+
+	err = categoryService.CreateCategory(category)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "category name is required")
+}
+
+func TestCategoryService_GetCategoryByID(t *testing.T) {
+	db := setupTestDB()
+	if db == nil {
+		t.Skip("Test database not available")
+	}
+	userRepo := repository.NewUserRepository(db)
+	categoryRepo := repository.NewCategoryRepository(db)
+	userService := service.NewUserService(userRepo)
+	categoryService := service.NewCategoryService(categoryRepo)
+
+	// Create test user
+	user := &model.User{
+		Username:  "testuser",
+		Email:     "test@example.com",
+		Password:  "password123",
+		FirstName: "Test",
+		LastName:  "User",
+	}
+	err := userService.CreateUser(user)
+	require.NoError(t, err)
+
+	// Create test category
+	category := &model.Category{
+		Name:        "Health & Fitness",
+		Description: "Health and fitness goals",
+		Color:       "#4CAF50",
+		UserID:      user.ID,
+	}
+	err = categoryService.CreateCategory(category)
+	require.NoError(t, err)
+
+	// Get category by ID
+	foundCategory, err := categoryService.GetCategoryByID(category.ID)
+
+	require.NoError(t, err)
+	assert.Equal(t, category.ID, foundCategory.ID)
+	assert.Equal(t, "Health & Fitness", foundCategory.Name)
+	assert.Equal(t, "#4CAF50", foundCategory.Color)
+}
+
+func TestCategoryService_GetCategoriesByUserID(t *testing.T) {
+	db := setupTestDB()
+	if db == nil {
+		t.Skip("Test database not available")
+	}
+	userRepo := repository.NewUserRepository(db)
+	categoryRepo := repository.NewCategoryRepository(db)
+	userService := service.NewUserService(userRepo)
+	categoryService := service.NewCategoryService(categoryRepo)
+
+	// Create test user
+	user := &model.User{
+		Username:  "testuser",
+		Email:     "test@example.com",
+		Password:  "password123",
+		FirstName: "Test",
+		LastName:  "User",
+	}
+	err := userService.CreateUser(user)
+	require.NoError(t, err)
+
+	// Create multiple categories
+	categoryData := []struct {
+		name  string
+		color string
+	}{
+		{"Work", "#FF5722"},
+		{"Personal", "#9C27B0"},
+		{"Learning", "#FF9800"},
+	}
+
+	for _, data := range categoryData {
+		category := &model.Category{
+			Name:   data.name,
+			Color:  data.color,
+			UserID: user.ID,
+		}
+		err := categoryService.CreateCategory(category)
+		require.NoError(t, err)
+	}
+
+	// Get user categories
+	categories, err := categoryService.GetCategoriesByUserID(user.ID)
+
+	require.NoError(t, err)
+	assert.Len(t, categories, 3)
+	for _, category := range categories {
+		assert.Equal(t, user.ID, category.UserID)
+	}
+}
+
+func TestCategoryService_UpdateCategory(t *testing.T) {
+	db := setupTestDB()
+	if db == nil {
+		t.Skip("Test database not available")
+	}
+	userRepo := repository.NewUserRepository(db)
+	categoryRepo := repository.NewCategoryRepository(db)
+	userService := service.NewUserService(userRepo)
+	categoryService := service.NewCategoryService(categoryRepo)
+
+	// Create test user
+	user := &model.User{
+		Username:  "testuser",
+		Email:     "test@example.com",
+		Password:  "password123",
+		FirstName: "Test",
+		LastName:  "User",
+	}
+	err := userService.CreateUser(user)
+	require.NoError(t, err)
+
+	// Create test category
+	category := &model.Category{
+		Name:        "Old Category",
+		Description: "Old description",
+		Color:       "#000000",
+		UserID:      user.ID,
+	}
+	err = categoryService.CreateCategory(category)
+	require.NoError(t, err)
+
+	// Update category
+	category.Name = "Updated Category"
+	category.Description = "Updated description"
+	category.Color = "#E91E63"
+	err = categoryService.UpdateCategory(category)
+
+	require.NoError(t, err)
+	assert.Equal(t, "Updated Category", category.Name)
+	assert.Equal(t, "Updated description", category.Description)
+	assert.Equal(t, "#E91E63", category.Color)
+}
+
+func TestCategoryService_DeleteCategory(t *testing.T) {
+	db := setupTestDB()
+	if db == nil {
+		t.Skip("Test database not available")
+	}
+	userRepo := repository.NewUserRepository(db)
+	categoryRepo := repository.NewCategoryRepository(db)
+	userService := service.NewUserService(userRepo)
+	categoryService := service.NewCategoryService(categoryRepo)
+
+	// Create test user
+	user := &model.User{
+		Username:  "testuser",
+		Email:     "test@example.com",
+		Password:  "password123",
+		FirstName: "Test",
+		LastName:  "User",
+	}
+	err := userService.CreateUser(user)
+	require.NoError(t, err)
+
+	// Create test category
+	category := &model.Category{
+		Name:        "Temporary Category",
+		Description: "This will be deleted",
+		Color:       "#795548",
+		UserID:      user.ID,
+	}
+	err = categoryService.CreateCategory(category)
+	require.NoError(t, err)
+
+	// Delete category
+	err = categoryService.DeleteCategory(category.ID)
+	require.NoError(t, err)
+
+	// Verify category is deleted
+	foundCategory, err := categoryService.GetCategoryByID(category.ID)
+	assert.Error(t, err)
+	assert.Nil(t, foundCategory)
+}
+
+func TestCategoryService_ListCategories(t *testing.T) {
+	db := setupTestDB()
+	if db == nil {
+		t.Skip("Test database not available")
+	}
+	userRepo := repository.NewUserRepository(db)
+	categoryRepo := repository.NewCategoryRepository(db)
+	userService := service.NewUserService(userRepo)
+	categoryService := service.NewCategoryService(categoryRepo)
+
+	// Create test users
+	user1 := &model.User{
+		Username:  "user1",
+		Email:     "user1@example.com",
+		Password:  "password123",
+		FirstName: "User",
+		LastName:  "One",
+	}
+	err := userService.CreateUser(user1)
+	require.NoError(t, err)
+
+	user2 := &model.User{
+		Username:  "user2",
+		Email:     "user2@example.com",
+		Password:  "password123",
+		FirstName: "User",
+		LastName:  "Two",
+	}
+	err = userService.CreateUser(user2)
+	require.NoError(t, err)
+
+	// Create categories for both users
+	categoryNames := []string{"Finance", "Hobbies", "Education", "Travel", "Family"}
+	users := []*model.User{user1, user2, user1, user2, user1}
+
+	for i, name := range categoryNames {
+		category := &model.Category{
+			Name:   name,
+			UserID: users[i].ID,
+		}
+		err := categoryService.CreateCategory(category)
+		require.NoError(t, err)
+	}
+
+	// Test List with different pagination
+	allCategories, err := categoryService.ListCategories(10, 0)
+	require.NoError(t, err)
+	assert.Len(t, allCategories, 5)
+
+	// Test with limit
+	limitedCategories, err := categoryService.ListCategories(3, 0)
+	require.NoError(t, err)
+	assert.Len(t, limitedCategories, 3)
+
+	// Test with offset
+	offsetCategories, err := categoryService.ListCategories(10, 2)
+	require.NoError(t, err)
+	assert.Len(t, offsetCategories, 3) // 5 total - 2 offset = 3
+}

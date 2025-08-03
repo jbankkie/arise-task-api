@@ -107,6 +107,11 @@ go tool cover -html=coverage.out -o coverage.html
 - **TestTaskService_GetTasksByUserID**: Get user's tasks via service
 - **TestTaskService_UpdateTask**: Service layer task updates
 - **TestTaskService_DeleteTask**: Service layer task deletion
+- **TestCategoryService_CreateCategory**: Category creation through service
+- **TestCategoryService_GetCategoryByID**: Service layer category retrieval
+- **TestCategoryService_GetCategoriesByUserID**: Get user's categories via service
+- **TestCategoryService_UpdateCategory**: Service layer category updates
+- **TestCategoryService_DeleteCategory**: Service layer category deletion
 
 ### 4. Handler Tests ⚠️ (Requires PostgreSQL)
 **Status**: Implemented but requires PostgreSQL test database
@@ -117,6 +122,11 @@ go tool cover -html=coverage.out -o coverage.html
 - **TestTaskHandler_CreateTask**: HTTP POST /tasks endpoint
 - **TestTaskHandler_GetTask**: HTTP GET /tasks/:id endpoint
 - **TestTaskHandler_GetUserTasks**: HTTP GET /tasks with user filter
+- **TestCategoryHandler_CreateCategory**: HTTP POST /categories endpoint
+- **TestCategoryHandler_GetCategory**: HTTP GET /categories/:id endpoint
+- **TestCategoryHandler_GetUserCategories**: HTTP GET /categories with user filter
+- **TestCategoryHandler_UpdateCategory**: HTTP PUT /categories/:id endpoint
+- **TestCategoryHandler_DeleteCategory**: HTTP DELETE /categories/:id endpoint
 
 ## Test Database Setup
 

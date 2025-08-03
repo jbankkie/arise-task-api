@@ -32,19 +32,28 @@ func (r *userRepository) Create(user *model.User) error {
 func (r *userRepository) GetByID(id uuid.UUID) (*model.User, error) {
 	var user model.User
 	err := r.db.First(&user, "id = ?", id).Error
-	return &user, err
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *userRepository) GetByEmail(email string) (*model.User, error) {
 	var user model.User
 	err := r.db.First(&user, "email = ?", email).Error
-	return &user, err
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *userRepository) GetByUsername(username string) (*model.User, error) {
 	var user model.User
 	err := r.db.First(&user, "username = ?", username).Error
-	return &user, err
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *userRepository) Update(user *model.User) error {

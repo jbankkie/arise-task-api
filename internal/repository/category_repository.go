@@ -31,7 +31,10 @@ func (r *categoryRepository) Create(category *model.Category) error {
 func (r *categoryRepository) GetByID(id uuid.UUID) (*model.Category, error) {
 	var category model.Category
 	err := r.db.Preload("Tasks").First(&category, "id = ?", id).Error
-	return &category, err
+	if err != nil {
+		return nil, err
+	}
+	return &category, nil
 }
 
 func (r *categoryRepository) GetByUserID(userID uuid.UUID) ([]model.Category, error) {

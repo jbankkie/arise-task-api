@@ -36,21 +36,23 @@ func main() {
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	taskRepo := repository.NewTaskRepository(db)
-	// categoryRepo := repository.NewCategoryRepository(db)
+	categoryRepo := repository.NewCategoryRepository(db)
 
 	// Initialize services
 	userService := service.NewUserService(userRepo)
 	taskService := service.NewTaskService(taskRepo)
+	categoryService := service.NewCategoryService(categoryRepo)
 
 	// Initialize handlers
 	userHandler := handler.NewUserHandler(userService)
 	taskHandler := handler.NewTaskHandler(taskService)
+	categoryHandler := handler.NewCategoryHandler(categoryService)
 
 	// Initialize Gin router
 	router := gin.Default()
 
 	// Setup routes
-	routes.SetupRoutes(router, userHandler, taskHandler)
+	routes.SetupRoutes(router, userHandler, taskHandler, categoryHandler)
 
 	// Start server
 	log.Printf("Starting server on port %s", config.Server.Port)

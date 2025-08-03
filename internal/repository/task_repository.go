@@ -33,7 +33,10 @@ func (r *taskRepository) Create(task *model.Task) error {
 func (r *taskRepository) GetByID(id uuid.UUID) (*model.Task, error) {
 	var task model.Task
 	err := r.db.Preload("User").Preload("Category").First(&task, "id = ?", id).Error
-	return &task, err
+	if err != nil {
+		return nil, err
+	}
+	return &task, nil
 }
 
 func (r *taskRepository) GetByUserID(userID uuid.UUID, limit, offset int) ([]model.Task, error) {

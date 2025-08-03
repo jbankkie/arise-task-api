@@ -10,6 +10,7 @@ func SetupRoutes(
 	router *gin.Engine,
 	userHandler *handler.UserHandler,
 	taskHandler *handler.TaskHandler,
+	categoryHandler *handler.CategoryHandler,
 ) {
 	// API v1 group
 	v1 := router.Group("/api/v1")
@@ -32,6 +33,16 @@ func SetupRoutes(
 			tasks.PUT("/:id", taskHandler.UpdateTask)
 			tasks.DELETE("/:id", taskHandler.DeleteTask)
 			tasks.GET("/", taskHandler.GetUserTasks)
+		}
+
+		// Category routes
+		categories := v1.Group("/categories")
+		{
+			categories.POST("/", categoryHandler.CreateCategory)
+			categories.GET("/:id", categoryHandler.GetCategory)
+			categories.PUT("/:id", categoryHandler.UpdateCategory)
+			categories.DELETE("/:id", categoryHandler.DeleteCategory)
+			categories.GET("/", categoryHandler.GetUserCategories)
 		}
 	}
 

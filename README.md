@@ -1,14 +1,14 @@
 # Task Manager API
 
-A modern RESTful API for task management built with Go, Gin web framework, GORM ORM, and PostgreSQL database. Supports both Docker containerized deployment and local development with WSL.
+A modern RESTful API for task management built with Go, Gin web framework, GORM ORM, and PostgreSQL database. Features complete CRUD operations for users, tasks, and categories with comprehensive testing suite.
 
 ## 🚀 Features
 
-- **User Management**: Complete CRUD operations for users with authentication
-- **Task Management**: Create, update, delete, and list tasks with status tracking
-- **Category System**: Organize tasks by categories
-- **Comprehensive Testing**: Model, Repository, Service, and Handler layer tests
-- **Database**: PostgreSQL with GORM ORM and auto-migration
+- **User Management**: Complete CRUD operations for users with secure authentication
+- **Task Management**: Create, update, delete, and list tasks with status and priority tracking
+- **Category System**: Full category management with user-specific organization
+- **Complete Test Coverage**: Repository, Service, and Handler layer tests (39 total tests)
+- **Database**: PostgreSQL with GORM ORM, auto-migration, and soft deletes
 - **RESTful API**: Clean API design following REST conventions
 - **Docker Support**: Full containerization with Docker Compose
 - **WSL Support**: Local development using Windows Subsystem for Linux
@@ -19,7 +19,7 @@ A modern RESTful API for task management built with Go, Gin web framework, GORM 
 
 - **Go 1.23+**: Modern Go with latest features
 - **Gin Framework**: High-performance HTTP web framework
-- **GORM**: Feature-rich ORM library for Go
+- **GORM**: Feature-rich ORM library with relationships and soft deletes
 - **PostgreSQL 15**: Reliable relational database
 - **Docker & Docker Compose**: Container orchestration
 - **UUID**: Unique identifiers for all entities
@@ -41,13 +41,34 @@ arise-task-api/
 │
 ├── internal/             # Private application code
 │   ├── handler/          # HTTP request handlers (controllers)
-│   │   ├── user_handler.go
-│   │   └── task_handler.go
+│   │   ├── user_handler.go      # User CRUD endpoints
+│   │   ├── task_handler.go      # Task CRUD endpoints
+│   │   └── category_handler.go  # Category CRUD endpoints
 │   ├── model/            # Database models
-│   │   └── models.go
+│   │   └── models.go    # User, Task, Category models with relationships
 │   ├── repository/       # Data access layer
 │   │   ├── user_repository.go
 │   │   ├── task_repository.go
+│   │   └── category_repository.go
+│   ├── service/          # Business logic layer
+│   │   ├── user_service.go
+│   │   ├── task_service.go
+│   │   └── category_service.go
+│   └── routes/           # API routing
+│       └── routes.go    # All API endpoints registration
+│
+├── test/                 # Comprehensive test files
+│   ├── model_test.go     # Model validation and creation tests
+│   ├── repository_test.go # Database operation tests (19 tests)
+│   ├── service_test.go   # Business logic tests (14 tests)
+│   ├── handler_test.go   # HTTP handler tests (6 tests)
+│   └── README.md         # Test documentation
+├── docker-compose.yml    # Docker Compose configuration
+├── Dockerfile            # Docker image configuration
+├── init.sql              # Database initialization
+├── go.mod / go.sum       # Go module files
+└── README.md             # This file
+```
 │   │   └── category_repository.go
 │   ├── service/          # Business logic layer
 │   │   ├── user_service.go
@@ -195,24 +216,35 @@ DB_HOST=<WSL_IP_ADDRESS>
 ### Health Check
 ```http
 GET /health
+Response: {"status":"ok","message":"Task Manager API is running"}
 ```
 
 ### User Endpoints
 ```http
 POST   /api/v1/users          # Create new user
-GET    /api/v1/users/:id      # Get user by ID
+GET    /api/v1/users/:id      # Get user by ID  
 PUT    /api/v1/users/:id      # Update user
-DELETE /api/v1/users/:id      # Delete user
+DELETE /api/v1/users/:id      # Delete user (soft delete)
 GET    /api/v1/users          # List all users (with pagination)
 ```
 
 ### Task Endpoints
 ```http
-POST   /api/v1/tasks          # Create new task
+POST   /api/v1/tasks          # Create new task (requires userID in context)
 GET    /api/v1/tasks/:id      # Get task by ID
 PUT    /api/v1/tasks/:id      # Update task
-DELETE /api/v1/tasks/:id      # Delete task
-GET    /api/v1/tasks          # Get user's tasks (with filtering & pagination)
+DELETE /api/v1/tasks/:id      # Delete task (soft delete)
+GET    /api/v1/tasks          # Get user's tasks (requires userID in context)
+```
+
+### Category Endpoints
+```http
+POST   /api/v1/categories          # Create new category (with user_id query param)
+GET    /api/v1/categories/:id      # Get category by ID
+PUT    /api/v1/categories/:id      # Update category
+DELETE /api/v1/categories/:id      # Delete category (soft delete)  
+GET    /api/v1/categories          # Get user's categories (with user_id query param)
+GET    /api/v1/categories/list     # List all categories (with pagination)
 ```
 
 ## 💡 API Usage Examples
@@ -223,39 +255,68 @@ curl -X POST http://localhost:8080/api/v1/users \
   -H "Content-Type: application/json" \
   -d '{
     "username": "johndoe",
-    "email": "john@example.com",
+    "email": "john@example.com", 
     "password": "password123",
     "first_name": "John",
     "last_name": "Doe"
   }'
 ```
 
-### Create Task
+### Create Category (with user_id query parameter)
 ```bash
+curl -X POST "http://localhost:8080/api/v1/categories?user_id=USER_ID_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Work Projects",
+    "description": "All work-related project tasks", 
+    "color": "#2196F3"
+  }'
+```
+
+### Create Task (requires authentication middleware in production)
+```bash
+# Note: Task creation requires userID in context (from auth middleware)
 curl -X POST http://localhost:8080/api/v1/tasks \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Complete Project",
     "description": "Finish the task management API",
     "priority": "high",
-    "status": "pending",
-    "due_date": "2025-12-31T23:59:59Z"
+    "due_date": "2025-12-31T23:59:59Z",
+    "category_id": "CATEGORY_ID_HERE"
   }'
 ```
 
-### Get Tasks with Filtering
+### Get User Tasks (requires authentication)
 ```bash
-# Get all tasks
+# Get all tasks for authenticated user
 curl http://localhost:8080/api/v1/tasks
 
-# Get tasks by status
-curl "http://localhost:8080/api/v1/tasks?status=pending"
+# Get tasks by status with pagination
+curl "http://localhost:8080/api/v1/tasks?status=pending&limit=5&offset=0"
+```
 
-# Get tasks with pagination
-curl "http://localhost:8080/api/v1/tasks?limit=5&offset=0"
+### Get User Categories
+```bash
+# Get all categories for a user
+curl "http://localhost:8080/api/v1/categories?user_id=USER_ID_HERE"
 
-# Get high priority tasks
-curl "http://localhost:8080/api/v1/tasks?priority=high"
+# Get specific category
+curl "http://localhost:8080/api/v1/categories/CATEGORY_ID_HERE"
+
+# List all categories with pagination
+curl "http://localhost:8080/api/v1/categories/list?limit=10&offset=0"
+```
+
+### Update Category
+```bash
+curl -X PUT "http://localhost:8080/api/v1/categories/CATEGORY_ID_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Category Name",
+    "description": "Updated description",
+    "color": "#FF5722"
+  }'
 ```
 
 ### PowerShell Examples (Windows)
@@ -264,10 +325,16 @@ curl "http://localhost:8080/api/v1/tasks?priority=high"
 Invoke-RestMethod -Uri "http://localhost:8080/health" -Method Get
 
 # Create User
-Invoke-RestMethod -Uri "http://localhost:8080/api/v1/users" -Method Post -ContentType "application/json" -Body '{"username":"testuser","email":"test@example.com","password":"password123"}'
+Invoke-RestMethod -Uri "http://localhost:8080/api/v1/users" -Method Post -ContentType "application/json" -Body '{"username":"testuser","email":"test@example.com","password":"password123","first_name":"Test","last_name":"User"}'
 
 # Get Users
 Invoke-RestMethod -Uri "http://localhost:8080/api/v1/users" -Method Get
+
+# Create Category (replace USER_ID_HERE with actual UUID)
+Invoke-RestMethod -Uri "http://localhost:8080/api/v1/categories?user_id=USER_ID_HERE" -Method Post -ContentType "application/json" -Body '{"name":"Work","description":"Work tasks","color":"#2196F3"}'
+
+# Get Categories
+Invoke-RestMethod -Uri "http://localhost:8080/api/v1/categories?user_id=USER_ID_HERE" -Method Get
 ```
 
 ## 🐳 Docker Commands
@@ -363,12 +430,18 @@ wsl -d Ubuntu docker ps | grep postgres
 ## 🛠️ Development
 
 ### Running Tests
-```bash
-# Run all model tests (no database required)
-go test ./test/ -run "TestUserModel|TestTaskModel" -v
 
-# Run all tests (requires PostgreSQL)
+The project includes a comprehensive test suite with **39 total tests** covering all layers:
+
+```bash
+# Run all tests (requires PostgreSQL test database)
 go test ./test/ -v
+
+# Run specific test files
+go test ./test/ -run "TestUserRepository" -v      # Repository tests
+go test ./test/ -run "TestUserService" -v         # Service tests  
+go test ./test/ -run "TestUserHandler" -v         # Handler tests
+go test ./test/ -run "TestUserModel" -v           # Model tests (no DB required)
 
 # Run with coverage
 go test ./test/ -v -cover
@@ -378,9 +451,31 @@ go test ./test/ -coverprofile=coverage.out
 go tool cover -html=coverage.out -o coverage.html
 ```
 
+### Test Statistics
+- **Repository Tests**: 19 tests (User: 7, Task: 6, Category: 6)
+- **Service Tests**: 14 tests (User: 5, Task: 4, Category: 5)  
+- **Handler Tests**: 6 tests (User: 2, Task: 2, Category: 2)
+- **Model Tests**: Various validation tests
+
 ### Test Database Setup
 ```bash
-# Start PostgreSQL test database
+# Start PostgreSQL test database (port 5433)
+docker run --name postgres-test \
+  -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DB=taskmanager_test \
+  -p 5433:5432 -d postgres:15-alpine
+
+# Verify test database connection
+docker exec postgres-test psql -U postgres -d taskmanager_test -c "SELECT version();"
+```
+
+### Test Features
+- **Database Integration**: Full PostgreSQL integration tests
+- **Soft Delete Testing**: Verifies GORM soft delete functionality  
+- **Error Handling**: Tests error scenarios and edge cases
+- **Authentication Simulation**: Handler tests simulate auth middleware
+- **Data Validation**: Comprehensive model validation testing
+- **CRUD Operations**: Complete Create, Read, Update, Delete testing
 docker run --name postgres-test \
   -e POSTGRES_PASSWORD=password \
   -e POSTGRES_DB=taskmanager_test \
